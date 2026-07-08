@@ -4,6 +4,9 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\OrderController;
+
 
 // 🔓 Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -19,6 +22,11 @@ Route::get('/categories/{category}', [CategoryController::class, 'show']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('/dashboard/orders', [DashboardController::class, 'recentOrders']);
+    Route::get('/dashboard/categories', [DashboardController::class, 'topCategories']);
+     Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
 
     // 👑 Admin-only routes
     Route::middleware('admin')->group(function () {
@@ -29,5 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/categories', [CategoryController::class, 'store']);
         Route::put('/categories/{category}', [CategoryController::class, 'update']);
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+        Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+        Route::patch('/orders/{order}/payment', [OrderController::class, 'updatePayment']);
     });
 });

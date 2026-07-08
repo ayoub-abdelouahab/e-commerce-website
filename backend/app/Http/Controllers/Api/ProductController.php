@@ -10,23 +10,35 @@ use Illuminate\Support\Str;
 class ProductController extends Controller
 {
     // GET /api/products
-    public function index(Request $request)
-    {
-        $query = Product::with('category')->active();
+public function index(Request $request)
+{
+    $query = Product::with('category')->active();
 
-        // optional filters
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
+    if ($request->filled('category_id')) {
+        $query->where('category_id', $request->category_id);
+    }
+
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
+
+    // admin sees all products including inactive
+    if ($request->user()?->isAdmin()) {
+        $query = Product::with('category');
 
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $products = $query->paginate(12);
-
-        return response()->json($products);
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
     }
+
+    $products = $query->paginate(12);
+
+    return response()->json($products);
+}
 
     // GET /api/products/{product}
     public function show(Product $product)

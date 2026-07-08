@@ -1,53 +1,167 @@
-import { useAuth } from "../context/AuthContext";
-import "../styles/Products.css";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { getDashboardStats, getRecentOrders, getTopCategories } from '../api/dashboard';
+import '../styles/Products.css';
 
 const Products = () => {
+    const { user, isAdmin, logout } = useAuth();
+    const navigate = useNavigate();
 
-    const { user, logout } = useAuth();
+    const [stats, setStats]           = useState(null);
+    const [orders, setOrders]         = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading]       = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [statsData, ordersData, categoriesData] = await Promise.all([
+                    getDashboardStats(),
+                    getRecentOrders(),
+                    getTopCategories(),
+                ]);
+                setStats(statsData);
+                setOrders(ordersData);
+                setCategories(categoriesData);
+            } catch (err) {
+                console.error('Failed to load dashboard data', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="db">
+                <div className="loading">Loading dashboard...</div>
+            </div>
+        );
+    }
+
+    const catColors = ['#0f766e', '#a855f7', '#f97316', '#ef4444', '#3b82f6'];
+    const catIcons  = ['💻', '👗', '🏠', '📚', '🎮'];
+    const catBgs    = ['#f0fdf9', '#fdf4ff', '#fff7ed', '#fef2f2', '#eff6ff'];
 
     return (
-        <div className="products-page">
-
-            <nav className="navbar">
-                <div className="logo">MyShop</div>
-
-                <button
-                    className="logout-btn"
-                    onClick={logout}
-                >
-                    Logout
-                </button>
+        <div className="db">
+            <nav className="nav">
+                <div className="nav-left">
+                    <div className="logo">MyShop</div>
+                    <div className="nav-links">
+                        <button className="nav-link active" onClick={() => navigate('/')}>Dashboard</button>
+                        <button className="nav-link" onClick={() => navigate('/products')}>Products</button>
+                        <button className="nav-link" onClick={() => navigate('/orders')}>Orders</button>
+                        <button className="nav-link" onClick={() => navigate(isAdmin ? '/admin/categories' : '/products')}>Categories</button>
+                    </div>
+                </div>
+                <div className="nav-right">
+                    <div className="avatar">{user?.name?.charAt(0).toUpperCase()}</div>
+                    <div className="user-info">
+                        <span className="user-name">{user?.name}</span>
+                        <span className="user-role">{user?.role}</span>
+                    </div>
+                    <button className="logout-btn" onClick={logout}>Logout</button>
+                </div>
             </nav>
 
-            <div className="hero">
-
-                <h1>Welcome {user?.name} 👋</h1>
-
-                <p>
-                    Logged in as <strong>{user?.role}</strong>
-                </p>
-
-                <div className="cards">
-
-                    <div className="card">
-                        <h3>Electronics</h3>
-                        <p>Latest gadgets and accessories.</p>
+            <div className="main">
+                <div className="banner">
+                    <div className="banner-text">
+                        <h1>Welcome back, {user?.name} 👋</h1>
+                        <p>Here's what's happening in your store today.</p>
+                        <span className="role-badge">{user?.role}</span>
                     </div>
-
-                    <div className="card">
-                        <h3>Fashion</h3>
-                        <p>Trending styles for everyone.</p>
+                    <div className="banner-stats">
+                        <div className="bstat">
+                            <strong>{stats?.today_orders ?? 0}</strong>
+                            <span>Orders today</span>
+                        </div>
+                        <div className="bstat">
+                            <strong>${stats?.today_revenue ?? '0.00'}</strong>
+                            <span>Revenue today</span>
+                        </div>
                     </div>
-
-                    <div className="card">
-                        <h3>Home</h3>
-                        <p>Everything for your home.</p>
-                    </div>
-
                 </div>
 
-            </div>
+                <div className="stats">
+                    <div className="stat">
+                        <div className="stat-label">Total revenue</div>
+                        <div className="stat-val">${stats?.total_revenue ?? '0.00'}</div>
+                        <div className="stat-sub">All time</div>
+                    </div>
+                    <div className="stat">
+                        <div className="stat-label">Total orders</div>
+                        <div className="stat-val">{stats?.total_orders ?? 0}</div>
+                        <div className="stat-sub">All time</div>
+                    </div>
+                    <div className="stat">
+                        <div className="stat-label">Products</div>
+                        <div className="stat-val">{stats?.total_products ?? 0}</div>
+                        <div className="stat-sub">In store</div>
+                    </div>
+                    <div className="stat">
+                        <div className="stat-label">Customers</div>
+                        <div className="stat-val">{stats?.total_customers ?? 0}</div>
+                        <div className="stat-sub">Registered</div>
+                    </div>
+                </div>
 
+                <div className="row2">
+                    <div className="panel">
+                        <div className="panel-head">
+                            <h3>Recent orders</h3>
+                            <button className="see-all">See all →</button>
+                        </div>
+                        {orders.length === 0 ? (
+                            <p className="empty">No orders yet.</p>
+                        ) : (
+                            orders.map(order => (
+                                <div className="order-row" key={order.id}>
+                                    <div>
+                                        <div className="order-id">{order.ref}</div>
+                                        <div className="order-date">{order.date}</div>
+                                    </div>
+                                    <span className={`pill ${order.payment_status}`}>
+                                        {order.payment_status}
+                                    </span>
+                                    <div className="order-amt">{order.total}</div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <div className="panel">
+                        <div className="panel-head">
+                            <h3>Top categories</h3>
+                        </div>
+                        <div className="cats">
+                            {categories.length === 0 ? (
+                                <p className="empty">No categories yet.</p>
+                            ) : (
+                                categories.map((cat, index) => (
+                                    <div className="cat-row" key={index}>
+                                        <div className="cat-icon" style={{background: catBgs[index] ?? '#f3f4f6'}}>
+                                            {catIcons[index] ?? '📦'}
+                                        </div>
+                                        <div className="cat-name">{cat.name}</div>
+                                        <div className="cat-bar-wrap">
+                                            <div className="cat-bar" style={{
+                                                width: `${cat.percentage}%`,
+                                                background: catColors[index] ?? '#0f766e'
+                                            }}></div>
+                                        </div>
+                                        <div className="cat-count">{cat.percentage}%</div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
