@@ -232,6 +232,23 @@ body {
     box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1);
 }
 
+.auth-input--error {
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+
+.auth-input--error:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.auth-field-error {
+    font-size: 12px;
+    font-weight: 600;
+    color: #ef4444;
+    margin-top: 2px;
+}
+
 /* ── Button ── */
 .auth-btn {
     width: 100%;

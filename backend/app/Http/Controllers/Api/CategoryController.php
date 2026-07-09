@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -39,6 +40,14 @@ class CategoryController extends Controller
 
         $category = Category::create($validated);
 
+        AuditLogger::log(
+            $request->user()->id,
+            $request->user()->name,
+            'CREATE',
+            'Category',
+            "Admin {$request->user()->name} created category \"{$category->name}\""
+        );
+
         return response()->json($category, 201);
     }
 
@@ -56,13 +65,30 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
+        AuditLogger::log(
+            $request->user()->id,
+            $request->user()->name,
+            'UPDATE',
+            'Category',
+            "Admin {$request->user()->name} updated category \"{$category->name}\""
+        );
+
         return response()->json($category);
     }
 
     // DELETE /api/categories/{category}
-    public function destroy(Category $category)
+    public function destroy(Request $request, Category $category)
     {
+        $name = $category->name;
         $category->delete();
+
+        AuditLogger::log(
+            $request->user()->id,
+            $request->user()->name,
+            'DELETE',
+            'Category',
+            "Admin {$request->user()->name} deleted category \"{$name}\""
+        );
 
         return response()->json(['message' => 'Category deleted successfully']);
     }

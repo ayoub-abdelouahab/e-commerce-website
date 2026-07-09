@@ -1,31 +1,56 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-
+import { useToast } from '../components/Toast';
+import { getFieldError, getFormErrors } from '../utils/errors';
+import { required, email, validate } from '../utils/validation';
 import '../styles/Auth.css';
+
+const rules = {
+    email: [required, email],
+    password: [required],
+};
 
 const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
+    const toast = useToast();
 
     const [form, setForm] = useState({ email: '', password: '' });
-    const [error, setError] = useState(null);
+    const [serverError, setServerError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+        if (fieldErrors[e.target.name]) {
+            setFieldErrors({ ...fieldErrors, [e.target.name]: null });
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(null);
+        const errs = validate(form, rules);
+        if (errs) { setFieldErrors(errs); return; }
+
+        setServerError(null);
+        setFieldErrors({});
         setLoading(true);
 
         try {
             await login(form);
+            toast('Logged in successfully.');
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || 'Something went wrong');
+            setServerError(getFormErrors(err));
+            const fieldErr = {};
+            if (err?.response?.data?.errors) {
+                for (const field of Object.keys(rules)) {
+                    const msg = getFieldError(err, field);
+                    if (msg) fieldErr[field] = msg;
+                }
+            }
+            setFieldErrors(fieldErr);
         } finally {
             setLoading(false);
         }
@@ -68,14 +93,14 @@ const Login = () => {
                         <p>Enter your details to access your account.</p>
                     </div>
 
-                    {error && <p className="auth-error">{error}</p>}
+                    {serverError && <p className="auth-error">{serverError}</p>}
 
-                    <form className="auth-form" onSubmit={handleSubmit}>
+                    <form className="auth-form" onSubmit={handleSubmit} noValidate>
                         <div className="auth-field">
                             <label htmlFor="login-email">Email</label>
                             <input
                                 id="login-email"
-                                className="auth-input"
+                                className={`auth-input${fieldErrors.email ? ' auth-input--error' : ''}`}
                                 type="email"
                                 name="email"
                                 value={form.email}
@@ -84,13 +109,14 @@ const Login = () => {
                                 autoComplete="email"
                                 required
                             />
+                            {fieldErrors.email && <span className="auth-field-error">{fieldErrors.email}</span>}
                         </div>
 
                         <div className="auth-field">
                             <label htmlFor="login-password">Password</label>
                             <input
                                 id="login-password"
-                                className="auth-input"
+                                className={`auth-input${fieldErrors.password ? ' auth-input--error' : ''}`}
                                 type="password"
                                 name="password"
                                 value={form.password}
@@ -99,6 +125,7 @@ const Login = () => {
                                 autoComplete="current-password"
                                 required
                             />
+                            {fieldErrors.password && <span className="auth-field-error">{fieldErrors.password}</span>}
                         </div>
 
                         <button className="auth-btn" type="submit" disabled={loading}>

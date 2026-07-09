@@ -5,11 +5,14 @@ import Register from './pages/Register';
 import Products from './pages/Products';
 import ProductsPage from './pages/ProductsPage';
 import OrdersPage from './pages/OrdersPage';
+import CategoriesPage from './pages/CategoriesPage';
+import CheckoutPage from './pages/CheckoutPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminAuditLogs from './pages/admin/AdminAuditLogs';
 
 const PrivateRoute = ({ children }) => {
     const { isLoggedIn } = useAuth();
@@ -50,6 +53,12 @@ const App = () => {
                 <Route path="/orders" element={
                     <PrivateRoute><OrdersPage /></PrivateRoute>
                 } />
+                <Route path="/categories" element={
+                    <PrivateRoute><CategoriesPage /></PrivateRoute>
+                } />
+                <Route path="/checkout" element={
+                    <PrivateRoute><CheckoutPage /></PrivateRoute>
+                } />
                 <Route path="/admin" element={
                     <AdminRoute><AdminLayout /></AdminRoute>
                 }>
@@ -57,6 +66,7 @@ const App = () => {
                     <Route path="products" element={<AdminProducts />} />
                     <Route path="categories" element={<AdminCategories />} />
                     <Route path="orders" element={<AdminOrders />} />
+                    <Route path="audit-logs" element={<AdminAuditLogs />} />
                 </Route>
             </Routes>
         </BrowserRouter>

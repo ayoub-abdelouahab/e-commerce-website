@@ -14,13 +14,14 @@
 .nav-link { padding:6px 12px; border-radius:7px; font-size:13px; font-weight:600; color:#6b7280; cursor:pointer; border:none; outline:none; background:none; transition:all 150ms ease; }
 .nav-link:hover { background:#f3f4f6; color:#111827; }
 .nav-link.active { background:#f0fdf9; color:#0f766e; }
-.nav-right { display:flex; align-items:center; gap:10px; }
+.nav-right { display:flex; align-items:center; gap:16px; padding-right:4px; }
 .avatar { width:34px; height:34px; border-radius:50%; background:#0f766e; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
-.user-info { display:flex; flex-direction:column; }
-.user-name { font-size:13px; font-weight:700; color:#111827; }
+.user-info { display:flex; flex-direction:column; gap:2px; }
+.user-name { font-size:14px; font-weight:700; color:#111827; }
 .user-role { font-size:11px; color:#9ca3af; text-transform:uppercase; letter-spacing:0.06em; }
-.logout-btn { padding:7px 14px; border:1.5px solid #e5e7eb; background:#fff; color:#374151; border-radius:7px; cursor:pointer; font-size:13px; font-weight:700; transition:all 150ms ease; }
-.logout-btn:hover { border-color:#0f766e; color:#0f766e; background:#f0fdf9; }
+.logout-btn { padding:6px 14px; border:1.5px solid #e2e8f0; background:#fff; color:#64748b; border-radius:7px; cursor:pointer; font-size:13px; font-weight:600; font-family:inherit; transition:all 200ms cubic-bezier(0.4,0,0.2,1); line-height:1.4; }
+.logout-btn:hover { border-color:#f87171; color:#dc2626; background:#fef2f2; box-shadow:0 1px 3px rgba(239,68,68,0.1); transform:translateY(-1px); }
+.logout-btn:active { transform:translateY(0); }
 
 /* ── Main ── */
 .op-main {
@@ -60,8 +61,13 @@
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    overflow: hidden;
+    /* overflow kept visible so the Treat dropdown is never clipped */
 }
+
+.op-table thead th:first-child { border-top-left-radius: 12px; }
+.op-table thead th:last-child  { border-top-right-radius: 12px; }
+.op-table tbody tr:last-child td:first-child { border-bottom-left-radius: 12px; }
+.op-table tbody tr:last-child td:last-child  { border-bottom-right-radius: 12px; }
 
 .op-table {
     width: 100%;
@@ -70,30 +76,34 @@
 }
 
 .op-table thead {
-    background: #f8fafc;
+    background: #f1f5f9;
     border-bottom: 1px solid #e5e7eb;
 }
 
 .op-table th {
-    padding: 12px 16px;
+    padding: 14px 16px !important;
     text-align: left;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     color: #6b7280;
     text-transform: uppercase;
     letter-spacing: 0.06em;
 }
 
 .op-row {
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid #f3f4f6 !important;
     cursor: pointer;
     transition: background 150ms ease;
 }
 
-.op-row:last-child { border-bottom: none; }
+.op-row:last-child { border-bottom: none !important; }
 .op-row:hover { background: #f8fafc; }
 
-.op-table td { padding: 14px 16px; }
+.op-table td {
+    padding: 18px 16px !important;
+    vertical-align: middle !important;
+    line-height: 1.6;
+}
 
 .op-id    { font-weight: 700; color: #111827; }
 .op-customer { color: #374151; font-weight: 600; }
@@ -110,23 +120,104 @@
 }
 
 .op-actions {
+    position: relative;
     display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+/* ── Treat button (compact, opens dropdown) ── */
+.op-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.op-treat-btn {
+    display: inline-flex;
+    align-items: center;
     gap: 8px;
-}
-
-.op-action-select {
-    padding: 5px 8px;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 6px;
-    font-size: 12px;
+    padding: 9px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
     font-family: inherit;
-    background: #fff;
-    color: #374151;
-    outline: none;
+    background: #0f766e;
+    color: #fff;
     cursor: pointer;
+    transition: all 150ms ease;
 }
 
-.op-action-select:focus { border-color: #0f766e; }
+.op-treat-btn:hover:not(:disabled) {
+    background: #0d9488;
+}
+
+.op-treat-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Dropdown menu ── */
+.op-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 170px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
+    padding: 6px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: op-drop-in 120ms ease;
+}
+
+@keyframes op-drop-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Last row: open upward so the menu is never clipped by the table bottom */
+.op-drop-up {
+    top: auto;
+    bottom: calc(100% + 6px);
+    animation-name: op-drop-in-up;
+}
+
+@keyframes op-drop-in-up {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.op-drop-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: inherit;
+    color: #374151;
+    cursor: pointer;
+    text-align: left;
+    transition: background 120ms ease;
+}
+
+.op-drop-item:hover { background: #f3f4f6; }
+
+.op-drop-item svg { flex-shrink: 0; }
+
+.op-drop-confirm  { color: #059669; }
+.op-drop-confirm:hover  { background: #ecfdf5; }
+.op-drop-reject  { color: #dc2626; }
+.op-drop-reject:hover  { background: #fef2f2; }
+.op-drop-process { color: #2563eb; }
+.op-drop-process:hover { background: #eff6ff; }
+.op-drop-view    { color: #475569; }
 
 /* ── States ── */
 .op-loading, .op-empty {
@@ -196,6 +287,38 @@
 .od-total { font-size: 18px; font-weight: 900; color: #0f766e; }
 
 /* ── Responsive ── */
+/* ── Order items ── */
+.od-items {
+    grid-column: 1 / -1;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+}
+
+.od-items > span {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.od-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.od-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #374151;
+}
+
+.od-item span:first-child { font-weight: 600; color: #111827; }
+
 @media (max-width: 768px) {
     .op-main { padding: 16px; }
     .nav-links { display: none; }

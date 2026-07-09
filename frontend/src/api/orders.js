@@ -10,8 +10,14 @@ export const getOrder = async (id) => {
     return response.data;
 };
 
-export const updateOrderStatus = async (id, status) => {
-    const response = await api.patch(`/orders/${id}/status`, { status });
+export const createOrder = async (data) => {
+    const response = await api.post('/orders', data);
+    return response.data;
+};
+
+export const updateOrderStatus = async (id, status, deliveryTime) => {
+    const payload = deliveryTime ? { status, delivery_time: deliveryTime } : { status };
+    const response = await api.patch(`/orders/${id}/status`, payload);
     return response.data;
 };
 

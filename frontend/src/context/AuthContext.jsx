@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
                 .catch(() => localStorage.removeItem('token'))
                 .finally(() => setLoading(false));
         } else {
-            setLoading(false);
+            setLoading(false); // eslint-disable-line react-hooks/set-state-in-effect
         }
     }, []);
 
@@ -52,4 +52,4 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext); // eslint-disable-line react-refresh/only-export-components

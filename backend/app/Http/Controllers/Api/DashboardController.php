@@ -43,7 +43,7 @@ class DashboardController extends Controller
                 'customer'       => $order->user?->name,
                 'status'         => $order->status,
                 'payment_status' => $order->payment_status,
-                'total'          => '$' . number_format($order->total, 2),
+                'total'          => number_format($order->total, 2) . ' DA',
                 'date'           => $order->created_at->diffForHumans(),
             ]);
 

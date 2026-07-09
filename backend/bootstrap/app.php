@@ -15,7 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class, // ✅ added
+            'waf'   => \App\Http\Middleware\WAF::class,
         ]);
+
+        $middleware->appendToGroup('api', \App\Http\Middleware\WAF::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

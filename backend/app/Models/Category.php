@@ -5,6 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $slug
+ * @property int|null $parent_id
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ *
+ * @method static static create(array $attributes)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> withCount(array|string $relations)
+ */
 class Category extends Model
 {
     use HasFactory;
@@ -15,21 +26,16 @@ class Category extends Model
         'parent_id',
     ];
 
-    // ✅ Relationships
-
-    // Category has many products
     public function products()
     {
         return $this->hasMany(Product::class);
     }
 
-    // Category can have a parent category
     public function parent()
     {
         return $this->belongsTo(Category::class, 'parent_id');
     }
 
-    // Category can have sub-categories
     public function children()
     {
         return $this->hasMany(Category::class, 'parent_id');

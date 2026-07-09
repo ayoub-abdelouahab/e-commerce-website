@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -24,6 +25,14 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
             'role'     => 'customer',
         ]);
+
+        AuditLogger::log(
+            null,
+            $user->name,
+            'REGISTER',
+            'User',
+            "User \"{$user->name}\" ({$user->email}) registered a new account"
+        );
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -48,6 +57,14 @@ class AuthController extends Controller
             ]);
         }
 
+        AuditLogger::log(
+            null,
+            $user->name,
+            'LOGIN',
+            'User',
+            "User \"{$user->name}\" ({$user->email}) logged in"
+        );
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -58,7 +75,16 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+        $user->currentAccessToken()->delete();
+
+        AuditLogger::log(
+            $user->id,
+            $user->name,
+            'LOGOUT',
+            'User',
+            "User \"{$user->name}\" ({$user->email}) logged out"
+        );
 
         return response()->json(['message' => 'Logged out successfully']);
     }

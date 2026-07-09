@@ -1,57 +1,82 @@
 import { useEffect, useState } from 'react';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../../api/categories';
+import { useToast } from '../../components/Toast';
+import { getFormErrors } from '../../utils/errors';
+import { required, validate } from '../../utils/validation';
+import { TableSkeleton } from '../../components/Skeleton';
+
+const formRules = { name: [required] };
 
 const AdminCategories = () => {
+    const toast = useToast();
     const [categories, setCategories] = useState([]);
     const [loading, setLoading]       = useState(true);
     const [showModal, setShowModal]   = useState(false);
     const [editing, setEditing]       = useState(null);
     const [form, setForm]             = useState({ name: '', parent_id: '' });
-    const [error, setError]           = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [serverError, setServerError] = useState(null);
     const [saving, setSaving]         = useState(false);
 
-    const fetchCategories = async () => {
-        setLoading(true);
-        try {
-            const data = await getCategories();
-            setCategories(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { fetchCategories(); }, []);
+    useEffect(() => {
+        let cancelled = false;
+        const fetchCategories = async () => {
+            setLoading(true);
+            try {
+                const data = await getCategories();
+                if (!cancelled) setCategories(data);
+            } catch (err) {
+                if (!cancelled) console.error(err);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+        fetchCategories();
+        return () => { cancelled = true; };
+    }, []);
 
     const openCreate = () => {
         setEditing(null);
         setForm({ name: '', parent_id: '' });
-        setError(null);
+        setFieldErrors({});
+        setServerError(null);
         setShowModal(true);
     };
 
     const openEdit = (cat) => {
         setEditing(cat);
         setForm({ name: cat.name, parent_id: cat.parent_id ?? '' });
-        setError(null);
+        setFieldErrors({});
+        setServerError(null);
         setShowModal(true);
+    };
+
+    const updateField = (field, value) => {
+        setForm({ ...form, [field]: value });
+        if (fieldErrors[field]) setFieldErrors({ ...fieldErrors, [field]: null });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const errs = validate(form, formRules);
+        if (errs) { setFieldErrors(errs); return; }
+
         setSaving(true);
-        setError(null);
+        setServerError(null);
+        setFieldErrors({});
         try {
             if (editing) {
                 await updateCategory(editing.id, form);
+                toast('Category updated.');
             } else {
                 await createCategory(form);
+                toast('Category created.');
             }
             setShowModal(false);
-            fetchCategories();
+            const data = await getCategories();
+            setCategories(data);
         } catch (err) {
-            setError(err.response?.data?.message || 'Something went wrong');
+            setServerError(getFormErrors(err));
         } finally {
             setSaving(false);
         }
@@ -61,9 +86,11 @@ const AdminCategories = () => {
         if (!confirm('Delete this category? Products in it will become uncategorized.')) return;
         try {
             await deleteCategory(id);
-            fetchCategories();
+            toast('Category deleted.');
+            const data = await getCategories();
+            setCategories(data);
         } catch (err) {
-            console.error(err);
+            toast(err.response?.data?.message || 'Could not delete.', 'error');
         }
     };
 
@@ -78,7 +105,7 @@ const AdminCategories = () => {
             </div>
 
             {loading ? (
-                <div className="admin-loading">Loading categories...</div>
+                <TableSkeleton rows={4} cols={5} />
             ) : categories.length === 0 ? (
                 <div className="admin-empty">No categories yet.</div>
             ) : (
@@ -120,23 +147,25 @@ const AdminCategories = () => {
                             <h2>{editing ? 'Edit Category' : 'Add Category'}</h2>
                             <button className="admin-modal-close" onClick={() => setShowModal(false)}>✕</button>
                         </div>
-                        {error && <p className="admin-modal-error">{error}</p>}
-                        <form className="admin-modal-form" onSubmit={handleSubmit}>
+                        {serverError && <p className="admin-modal-error">{serverError}</p>}
+                        <form className="admin-modal-form" onSubmit={handleSubmit} noValidate>
                             <div className="admin-mf-field">
                                 <label>Name</label>
                                 <input
                                     type="text"
                                     value={form.name}
-                                    onChange={e => setForm({...form, name: e.target.value})}
+                                    onChange={e => updateField('name', e.target.value)}
+                                    className={fieldErrors.name ? 'error' : ''}
                                     placeholder="e.g. Electronics"
                                     required
                                 />
+                                {fieldErrors.name && <span className="field-err">{fieldErrors.name}</span>}
                             </div>
                             <div className="admin-mf-field">
                                 <label>Parent category <span style={{color:'#9ca3af', fontWeight:400}}>(optional)</span></label>
                                 <select
                                     value={form.parent_id}
-                                    onChange={e => setForm({...form, parent_id: e.target.value})}
+                                    onChange={e => updateField('parent_id', e.target.value)}
                                 >
                                     <option value="">None (top level)</option>
                                     {categories

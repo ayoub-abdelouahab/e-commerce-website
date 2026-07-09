@@ -24,6 +24,7 @@ const AdminLayout = () => {
                     <NavLink to="/admin/products">Products</NavLink>
                     <NavLink to="/admin/categories">Categories</NavLink>
                     <NavLink to="/admin/orders">Orders</NavLink>
+                    <NavLink to="/admin/audit-logs">Audit Logs</NavLink>
                 </nav>
 
                 <button className="admin-store-link" type="button" onClick={() => navigate('/products')}>

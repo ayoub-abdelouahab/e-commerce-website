@@ -1,0 +1,22 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+
+    paths:
+        - app/
+        - config/
+        - routes/
+        - database/migrations/
+
+    level: 5
+
+    excludePaths:
+        - *.blade.php
+
+    checkMissingIterableValueType: false
+
+    databaseMigrationsPath:
+        - database/migrations/
+
+    checkOctaneCompatibility: false

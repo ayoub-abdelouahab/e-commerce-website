@@ -1,36 +1,60 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-
+import { useToast } from '../components/Toast';
+import { getFieldError, getFormErrors } from '../utils/errors';
+import { required, email, minLength, passwordMatch, validate } from '../utils/validation';
 import '../styles/Auth.css';
+
+const rules = {
+    name: [required],
+    email: [required, email],
+    password: [required, minLength(8)],
+    password_confirmation: [required, passwordMatch('password')],
+};
 
 const Register = () => {
     const { register } = useAuth();
     const navigate = useNavigate();
+    const toast = useToast();
 
     const [form, setForm] = useState({
-        name: '',
-        email: '',
-        password: '',
-        password_confirmation: '',
+        name: '', email: '', password: '', password_confirmation: '',
     });
-    const [error, setError] = useState(null);
+    const [serverError, setServerError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+        if (fieldErrors[e.target.name]) {
+            setFieldErrors({ ...fieldErrors, [e.target.name]: null });
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(null);
+        const errs = validate(form, rules);
+        if (errs) { setFieldErrors(errs); return; }
+
+        setServerError(null);
+        setFieldErrors({});
         setLoading(true);
 
         try {
             await register(form);
+            toast('Account created successfully.');
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || 'Something went wrong');
+            setServerError(getFormErrors(err));
+            const fieldErr = {};
+            if (err?.response?.data?.errors) {
+                for (const field of Object.keys(rules)) {
+                    const msg = getFieldError(err, field);
+                    if (msg) fieldErr[field] = msg;
+                }
+            }
+            setFieldErrors(fieldErr);
         } finally {
             setLoading(false);
         }
@@ -68,14 +92,14 @@ const Register = () => {
                         <p>Create your account to start shopping.</p>
                     </div>
 
-                    {error && <p className="auth-error">{error}</p>}
+                    {serverError && <p className="auth-error">{serverError}</p>}
 
-                    <form className="auth-form" onSubmit={handleSubmit}>
+                    <form className="auth-form" onSubmit={handleSubmit} noValidate>
                         <div className="auth-field">
                             <label htmlFor="register-name">Name</label>
                             <input
                                 id="register-name"
-                                className="auth-input"
+                                className={`auth-input${fieldErrors.name ? ' auth-input--error' : ''}`}
                                 type="text"
                                 name="name"
                                 value={form.name}
@@ -84,13 +108,14 @@ const Register = () => {
                                 autoComplete="name"
                                 required
                             />
+                            {fieldErrors.name && <span className="auth-field-error">{fieldErrors.name}</span>}
                         </div>
 
                         <div className="auth-field">
                             <label htmlFor="register-email">Email</label>
                             <input
                                 id="register-email"
-                                className="auth-input"
+                                className={`auth-input${fieldErrors.email ? ' auth-input--error' : ''}`}
                                 type="email"
                                 name="email"
                                 value={form.email}
@@ -99,13 +124,14 @@ const Register = () => {
                                 autoComplete="email"
                                 required
                             />
+                            {fieldErrors.email && <span className="auth-field-error">{fieldErrors.email}</span>}
                         </div>
 
                         <div className="auth-field">
                             <label htmlFor="register-password">Password</label>
                             <input
                                 id="register-password"
-                                className="auth-input"
+                                className={`auth-input${fieldErrors.password ? ' auth-input--error' : ''}`}
                                 type="password"
                                 name="password"
                                 value={form.password}
@@ -114,6 +140,7 @@ const Register = () => {
                                 autoComplete="new-password"
                                 required
                             />
+                            {fieldErrors.password && <span className="auth-field-error">{fieldErrors.password}</span>}
                         </div>
 
                         <div className="auth-field">
@@ -122,7 +149,7 @@ const Register = () => {
                             </label>
                             <input
                                 id="register-password-confirmation"
-                                className="auth-input"
+                                className={`auth-input${fieldErrors.password_confirmation ? ' auth-input--error' : ''}`}
                                 type="password"
                                 name="password_confirmation"
                                 value={form.password_confirmation}
@@ -131,6 +158,7 @@ const Register = () => {
                                 autoComplete="new-password"
                                 required
                             />
+                            {fieldErrors.password_confirmation && <span className="auth-field-error">{fieldErrors.password_confirmation}</span>}
                         </div>
 
                         <button className="auth-btn" type="submit" disabled={loading}>
